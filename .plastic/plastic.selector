@@ -1,4 +1,0 @@
-repository "SGI_1.3@SRL19@cloud"
-  path "/"
-    br "/main"
-    co "/main"
