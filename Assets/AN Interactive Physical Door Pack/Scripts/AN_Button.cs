@@ -34,24 +34,43 @@ public class AN_Button : MonoBehaviour
 
     Animator anim;
 
+    private PlayerInputActions inputActions; //Nuevo!!
+  
     // NearView()
     float distance;
     float angleView;
     Vector3 direction;
 
+    void Awake()
+    {
+        inputActions = new PlayerInputActions();
+    }
+
+    void OnEnable()
+    {
+        inputActions.Enable();
+    }
+
+    void OnDisable()
+    {
+        inputActions.Disable();
+    }
     void Start()
     {
         anim = GetComponent<Animator>();
-        startYPosition = RampObject.position.y;
-        startQuat = transform.rotation;
-        rampQuat = RampObject.rotation;
+        if (RampObject != null) {
+            startYPosition = RampObject.position.y;
+            startQuat = transform.rotation;
+            rampQuat = RampObject.rotation;
+        }
+        
     }
 
     void Update()
     {
         if (!Locked)
         {
-            if (Input.GetKeyDown(KeyCode.E) && !isValve && DoorObject != null && DoorObject.Remote && NearView()) // 1.lever and 2.button
+            if (inputActions.Player.Interact.triggered && !isValve && DoorObject != null && DoorObject.Remote && NearView()) // 1.lever and 2.button
             {
                 DoorObject.Action(); // void in door script to open/close
                 if (isLever) // animations
@@ -64,7 +83,7 @@ public class AN_Button : MonoBehaviour
             else if (isValve && RampObject != null) // 3.valve
             {
                 // changing value in script
-                if (Input.GetKey(KeyCode.E) && NearView())
+                if (inputActions.Player.Interact.triggered && NearView())
                 {
                     if (valveBool)
                     {
