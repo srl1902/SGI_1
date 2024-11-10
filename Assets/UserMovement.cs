@@ -7,7 +7,7 @@ using UnityEngine.InputSystem;
 public class UserMovement : MonoBehaviour
 {
     private Rigidbody rb;
-    private float force = 10f;
+    private float force = 1000f;
     private PlayerInput playerInput;
     private Vector2 input;
 

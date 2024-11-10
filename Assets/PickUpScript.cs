@@ -1,9 +1,12 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using Unity.VisualScripting;
 using UnityEngine;
 using UnityEngine.InputSystem;
+using UnityEngine.Rendering.UI;
+using UnityEngine.UI;
 
 public class PickUpScript : MonoBehaviour
 {
@@ -19,6 +22,7 @@ public class PickUpScript : MonoBehaviour
     private Rigidbody heldObjRb; //rigidbody of object we pick up
     private bool canDrop = true; //this is needed so we don't throw/drop object when rotating the object
     private int LayerNumber; //layer index
+    private GameObject highlightedObject;
 
     private PlayerInput playerInput;
 
@@ -35,6 +39,7 @@ public class PickUpScript : MonoBehaviour
         //mouseLookScript = player.GetComponent<MouseLookScript>();
     }
     void Update(){
+        HighlightObject();
         if (heldObj != null) //if player is holding object
         {
             MoveObject(); //keep object position at holdPos
@@ -44,10 +49,41 @@ public class PickUpScript : MonoBehaviour
 
     public void ThrowHolding(InputAction.CallbackContext callbackContext){
         Debug.Log("Throwing!");
+        HighlightObject();
         if (callbackContext.started && canDrop == true) //Mous0 (leftclick) is used to throw, change this if you want another button to be used)
         {
             StopClipping();
             ThrowObject();
+        }
+    }
+
+    private void HighlightObject()
+    {
+        if (highlightedObject != null)
+        {
+            Debug.Log("No longer looking at object");
+            highlightedObject.GetComponent<Outline>().enabled = false;
+            highlightedObject = null;
+        }
+        RaycastHit hit;
+        if (Physics.Raycast(transform.position, transform.TransformDirection(Vector3.forward), out hit, pickUpRange))
+        {
+            Debug.Log("Looking at object");
+            //make sure pickup tag is attached
+            if (hit.transform.gameObject.tag == "canPickUp")
+            {
+                highlightedObject = hit.transform.gameObject;
+                Debug.Log("Found object to pick up");
+                //pass in object hit into the PickUpObject function
+                if (highlightedObject.GetComponent<Outline>() == null)
+                {
+                    highlightedObject.AddComponent<Outline>();
+                    highlightedObject.GetComponent<Outline>().OutlineMode = Outline.Mode.OutlineAll;
+                    highlightedObject.GetComponent<Outline>().OutlineColor = Color.magenta;
+                    highlightedObject.GetComponent<Outline>().OutlineWidth = 7f;
+                }
+                highlightedObject.GetComponent<Outline>().enabled = true;
+            }
         }
     }
 
