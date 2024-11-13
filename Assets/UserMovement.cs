@@ -7,11 +7,13 @@ using UnityEngine.InputSystem;
 public class UserMovement : MonoBehaviour
 {
     private Rigidbody rb;
-    private float force = 1000f;
+    private float force = 100f;
     private PlayerInput playerInput;
     private Vector2 input;
 
     private bool canMove = true;
+
+    [SerializeField] private float moveSpeed = 10f;
 
     public bool CanMove
     {
@@ -46,7 +48,8 @@ public class UserMovement : MonoBehaviour
             cameraRight.Normalize();
 
             Vector3 moveDirection = cameraForward * input.y + cameraRight * input.x;
-            rb.AddForce(moveDirection * force);
+            // rb.AddForce(moveDirection * force);
+            rb.MovePosition(transform.position + moveDirection * moveSpeed*Time.deltaTime);
         }
     }
 

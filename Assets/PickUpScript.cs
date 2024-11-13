@@ -13,16 +13,20 @@ public class PickUpScript : MonoBehaviour
 
     public GameObject player;
     public Transform holdPos;
+    public Transform detailPos;
     // Start is called before the first frame update
     //if you copy from below this point, you are legally required to like the video
     public float throwForce = 500f; //force at which the object is thrown at
     public float pickUpRange = 5f; //how far the player can pickup the object from
-    private float rotationSensitivity = 1f; //how fast/slow the object is rotated in relation to mouse movement
+    private float rotationSensitivity = 100f; //how fast/slow the object is rotated in relation to mouse movement
     private GameObject heldObj; //object which we pick up
     private Rigidbody heldObjRb; //rigidbody of object we pick up
     private bool canDrop = true; //this is needed so we don't throw/drop object when rotating the object
     private int LayerNumber; //layer index
     private GameObject highlightedObject;
+    private Vector3 originalScale;
+    private bool isDetail = false;
+    private bool isRotating = false;
 
     private PlayerInput playerInput;
 
@@ -39,11 +43,31 @@ public class PickUpScript : MonoBehaviour
         //mouseLookScript = player.GetComponent<MouseLookScript>();
     }
     void Update(){
+        if (isRotating) {
+            player.GetComponent<UserMovement>().CanMove = false;
+            canDrop = false;
+        }
+        if (isDetail) {
+            player.GetComponent<UserMovement>().CanMove = false;
+            canDrop = false;
+        }
+        if (!isRotating && !isDetail){
+            player.GetComponent<UserMovement>().CanMove = true;
+            canDrop = true;
+        }
         HighlightObject();
         if (heldObj != null) //if player is holding object
         {
-            MoveObject(); //keep object position at holdPos
-            RotateObject();
+            if (isDetail)
+            {
+                DetailView();
+                RotateObject();
+            }
+            else
+            {
+                MoveObject(); //keep object position at holdPos
+                RotateObject(); //rotate object
+            }
         }
     }
 
@@ -61,7 +85,7 @@ public class PickUpScript : MonoBehaviour
     {
         if (highlightedObject != null)
         {
-            Debug.Log("No longer looking at object");
+            // Debug.Log("No longer looking at object");
             highlightedObject.GetComponent<Outline>().enabled = false;
             highlightedObject = null;
         }
@@ -69,17 +93,32 @@ public class PickUpScript : MonoBehaviour
         if (Physics.Raycast(transform.position, transform.TransformDirection(Vector3.forward), out hit, pickUpRange))
         {
             Debug.Log("Looking at object");
+            Debug.Log(hit.transform.gameObject.tag);
             //make sure pickup tag is attached
             if (hit.transform.gameObject.tag == "canPickUp")
             {
                 highlightedObject = hit.transform.gameObject;
-                Debug.Log("Found object to pick up");
+                // Debug.Log("Found object to pick up");
                 //pass in object hit into the PickUpObject function
                 if (highlightedObject.GetComponent<Outline>() == null)
                 {
                     highlightedObject.AddComponent<Outline>();
                     highlightedObject.GetComponent<Outline>().OutlineMode = Outline.Mode.OutlineAll;
                     highlightedObject.GetComponent<Outline>().OutlineColor = Color.magenta;
+                    highlightedObject.GetComponent<Outline>().OutlineWidth = 7f;
+                }
+                highlightedObject.GetComponent<Outline>().enabled = true;
+            }
+            else if (hit.transform.gameObject.tag == "canUseOn")
+            {
+                highlightedObject = hit.transform.gameObject;
+                Debug.Log("Found object that can be used on");
+                //pass in object hit into the PickUpObject function
+                if (highlightedObject.GetComponent<Outline>() == null)
+                {
+                    highlightedObject.AddComponent<Outline>();
+                    highlightedObject.GetComponent<Outline>().OutlineMode = Outline.Mode.OutlineAll;
+                    highlightedObject.GetComponent<Outline>().OutlineColor = Color.blue;
                     highlightedObject.GetComponent<Outline>().OutlineWidth = 7f;
                 }
                 highlightedObject.GetComponent<Outline>().enabled = true;
@@ -95,18 +134,21 @@ public class PickUpScript : MonoBehaviour
             Debug.Log("Step1");
             if (heldObj == null) //if currently not holding anything
             {
-                Debug.Log("Step2");
                 //perform raycast to check if player is looking at object within pickuprange
                 RaycastHit hit;
                 if (Physics.Raycast(transform.position, transform.TransformDirection(Vector3.forward), out hit, pickUpRange))
                 {
-                    Debug.Log("Step3");
                     //make sure pickup tag is attached
                     if (hit.transform.gameObject.tag == "canPickUp")
                     {
-                        Debug.Log("Step4");
                         //pass in object hit into the PickUpObject function
                         PickUpObject(hit.transform.gameObject);
+                    }
+                    else if (hit.transform.gameObject.tag == "canUseOn")
+                    {
+                        Debug.Log("Step4");
+                        //pass in object hit into the PickUpObject function
+                        hit.transform.gameObject.GetComponent<IUsableElement>().Use(gameObject);
                     }
                 }
             }
@@ -123,6 +165,62 @@ public class PickUpScript : MonoBehaviour
         }
     }
 
+    public void ToggleRotate(InputAction.CallbackContext callbackContext)
+    {
+        if (callbackContext.started)
+        {
+            if (heldObj == null) return;
+            if (isRotating) {
+                isRotating = false;
+                // player.GetComponent<UserMovement>().CanMove = true;
+            }
+            else
+            {
+                // player.GetComponent<UserMovement>().CanMove = false;
+                isRotating = true;
+            }
+        }
+    }
+
+    public void ToggleDetailPos(InputAction.CallbackContext callbackContext)
+    {
+        if (callbackContext.started){
+            if (heldObj == null) return;
+            if (isDetail)
+            {
+                isDetail = false;
+                heldObj.transform.localScale = originalScale;
+                heldObj.transform.position = holdPos.position;
+                // player.GetComponent<UserMovement>().CanMove = true;
+            }
+            else
+            {
+                // player.GetComponent<UserMovement>().CanMove = false;
+                heldObj.transform.position = detailPos.position;
+                isDetail = true;
+            }
+        }
+    }
+
+    void DetailView()
+    {
+        if (isDetail && !isRotating)//hold R key to rotate, change this to whatever key you want
+        {
+            canDrop = false; //make sure throwing can't occur during rotating
+            // player.GetComponent<UserMovement>().CanMove = false;
+
+            Vector2 input = playerInput.actions["Move"].ReadValue<Vector2>(); 
+            float XaxisRotation = input.x * rotationSensitivity;
+            float YaxisRotation = input.y * rotationSensitivity;
+            //rotate the object depending on mouse X-Y Axis from the camera perspective
+            heldObj.transform.localScale = heldObj.transform.localScale + new Vector3(0.1f, 0.1f, 0.1f) * XaxisRotation*Time.deltaTime;
+            // Ensure the local scale is never below 1
+            if (heldObj.transform.localScale.x < 1) heldObj.transform.localScale = new Vector3(1, heldObj.transform.localScale.y, heldObj.transform.localScale.z);
+            if (heldObj.transform.localScale.y < 1) heldObj.transform.localScale = new Vector3(heldObj.transform.localScale.x, 1, heldObj.transform.localScale.z);
+            if (heldObj.transform.localScale.z < 1) heldObj.transform.localScale = new Vector3(heldObj.transform.localScale.x, heldObj.transform.localScale.y, 1);
+        }
+    }
+
     void PickUpObject(GameObject pickUpObj)
     {
         Debug.LogWarning("Step5");
@@ -134,6 +232,7 @@ public class PickUpScript : MonoBehaviour
             heldObjRb.isKinematic = true;
             heldObjRb.transform.parent = holdPos.transform; //parent object to holdposition
             heldObj.layer = LayerNumber; //change the object layer to the holdLayer
+            originalScale = heldObj.transform.localScale;
             //make sure object doesnt collide with player, it can cause weird bugs
             Physics.IgnoreCollision(heldObj.GetComponent<Collider>(), player.GetComponent<Collider>(), true);
         }
@@ -154,39 +253,17 @@ public class PickUpScript : MonoBehaviour
     }
     void RotateObject()
     {
-        if (playerInput == null)
-        {
-            Debug.LogError("playerInput is null");
-            return;
-        }
-
-        var rotateAction = playerInput.actions["Rotate"];
-        if (rotateAction == null)
-        {
-            Debug.LogError("Rotate action is null");
-            return;
-        }
-
-        bool isRotating = playerInput.actions["Rotate"].IsPressed();
         if (isRotating)//hold R key to rotate, change this to whatever key you want
         {
             canDrop = false; //make sure throwing can't occur during rotating
-            player.GetComponent<UserMovement>().CanMove = false;
+            // player.GetComponent<UserMovement>().CanMove = false;
 
             Vector2 input = playerInput.actions["Move"].ReadValue<Vector2>(); 
-            float XaxisRotation = input.x * rotationSensitivity;
-            float YaxisRotation = input.y * rotationSensitivity;
+            float XaxisRotation = input.x * rotationSensitivity*Time.deltaTime;
+            float YaxisRotation = input.y * rotationSensitivity*Time.deltaTime;
             //rotate the object depending on mouse X-Y Axis from the camera perspective
             heldObj.transform.Rotate(Camera.main.transform.up, -XaxisRotation, Space.World);
             heldObj.transform.Rotate(Camera.main.transform.right, YaxisRotation, Space.World);
-        }
-        else
-        {
-            //re-enable player being able to look around
-            //mouseLookScript.verticalSensitivity = originalvalue;
-            //mouseLookScript.lateralSensitivity = originalvalue;
-            canDrop = true;
-            player.GetComponent<UserMovement>().CanMove = true;
         }
     }
     void ThrowObject()
