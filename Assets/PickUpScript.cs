@@ -213,7 +213,7 @@ public class PickUpScript : MonoBehaviour
             float XaxisRotation = input.x * rotationSensitivity;
             float YaxisRotation = input.y * rotationSensitivity;
             //rotate the object depending on mouse X-Y Axis from the camera perspective
-            heldObj.transform.localScale = heldObj.transform.localScale + new Vector3(0.1f, 0.1f, 0.1f) * XaxisRotation*Time.deltaTime;
+            heldObj.transform.localScale = heldObj.transform.localScale + new Vector3(0.5f, 0.5f, 0.5f) * XaxisRotation*Time.deltaTime;
             // Ensure the local scale is never below 1
             if (heldObj.transform.localScale.x < 1) heldObj.transform.localScale = new Vector3(1, heldObj.transform.localScale.y, heldObj.transform.localScale.z);
             if (heldObj.transform.localScale.y < 1) heldObj.transform.localScale = new Vector3(heldObj.transform.localScale.x, 1, heldObj.transform.localScale.z);
@@ -229,6 +229,7 @@ public class PickUpScript : MonoBehaviour
             Debug.LogWarning("Step6");
             heldObj = pickUpObj; //assign heldObj to the object that was hit by the raycast (no longer == null)
             heldObjRb = pickUpObj.GetComponent<Rigidbody>(); //assign Rigidbody
+            heldObjRb.useGravity = true;
             heldObjRb.isKinematic = true;
             heldObjRb.transform.parent = holdPos.transform; //parent object to holdposition
             heldObj.layer = LayerNumber; //change the object layer to the holdLayer

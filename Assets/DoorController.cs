@@ -51,13 +51,13 @@ public class DoorController : MonoBehaviour
             SecondButtonPressed();
         }
         firstButton.GetComponent<ButtonController>().isPressed = isFirstButtonPressed;
-        firstButtonLight.GetComponent<Light>().intensity = isFirstButtonPressed ? 0.2f : 0;
+        firstButtonLight.GetComponent<Light>().intensity = isFirstButtonPressed ? 0.6f : 0;
         secondButton.GetComponent<ButtonController>().isPressed = isSecondButtonPressed;
-        secondButtonLight.GetComponent<Light>().intensity = isSecondButtonPressed ? 0.2f : 0;
+        secondButtonLight.GetComponent<Light>().intensity = isSecondButtonPressed ? 0.6f : 0;
         thirdButton.GetComponent<ButtonController>().isPressed = isThirdButtonPressed;
-        thirdButtonLight.GetComponent<Light>().intensity = isThirdButtonPressed ? 0.2f : 0;
+        thirdButtonLight.GetComponent<Light>().intensity = isThirdButtonPressed ? 0.6f : 0;
         fourthButton.GetComponent<ButtonController>().isPressed = isFourthButtonPressed;
-        fourthButtonLight.GetComponent<Light>().intensity = isFourthButtonPressed ? 0.2f : 0;
+        fourthButtonLight.GetComponent<Light>().intensity = isFourthButtonPressed ? 0.6f : 0;
 
     }
 

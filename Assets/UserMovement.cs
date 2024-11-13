@@ -10,6 +10,7 @@ public class UserMovement : MonoBehaviour
     private float force = 100f;
     private PlayerInput playerInput;
     private Vector2 input;
+    private Vector2 inputCamera;
 
     private bool canMove = true;
 
@@ -32,7 +33,14 @@ public class UserMovement : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
-        input = playerInput.actions["Move"].ReadValue<Vector2>(); 
+        input = playerInput.actions["Move"].ReadValue<Vector2>();
+        inputCamera = playerInput.actions["Look"].ReadValue<Vector2>();
+    }
+
+    private void rotateCamera()
+    {
+        Vector3 rotation = new Vector3(-inputCamera.y, inputCamera.x, 0) * force * Time.deltaTime;
+        Camera.main.transform.eulerAngles += rotation;
     }
 
 
@@ -48,9 +56,12 @@ public class UserMovement : MonoBehaviour
             cameraRight.Normalize();
 
             Vector3 moveDirection = cameraForward * input.y + cameraRight * input.x;
-            // rb.AddForce(moveDirection * force);
+            rb.AddForce(moveDirection * force);
             rb.MovePosition(transform.position + moveDirection * moveSpeed*Time.deltaTime);
         }
+
+        rotateCamera();
+
     }
 
     public void Move(InputAction.CallbackContext callbackContext){
